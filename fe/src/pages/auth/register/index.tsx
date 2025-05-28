@@ -1,23 +1,18 @@
-import * as React from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoginSchemaType, loginSchema } from "./schema";
+import { RegisterSchemaType, registerSchema } from "./schema";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
 import CssBaseline from "@mui/material/CssBaseline";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import FormLabel from "@mui/material/FormLabel";
 import FormControl from "@mui/material/FormControl";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
-import ForgotPassword from "./components/ForgotPassword";
 import { styled } from "@mui/material/styles";
 import { SitemarkIcon } from "./components/CustomIcons";
-import { Link as UILink } from "@mui/material";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -56,23 +51,14 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 const SignIn = (props: { disableCustomTheme?: boolean }) => {
-  const [open, setOpen] = React.useState(false);
-
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginSchemaType>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<RegisterSchemaType>({
+    resolver: zodResolver(registerSchema),
   });
-  const onSubmit = (data: LoginSchemaType) => console.log(data);
+  const onSubmit = (data: RegisterSchemaType) => console.log(data);
 
   return (
     <>
@@ -85,7 +71,7 @@ const SignIn = (props: { disableCustomTheme?: boolean }) => {
             variant="h4"
             sx={{ width: "100%", fontSize: "clamp(2rem, 10vw, 2.15rem)" }}
           >
-            Login
+            Register
           </Typography>
           <Box
             component="form"
@@ -139,32 +125,38 @@ const SignIn = (props: { disableCustomTheme?: boolean }) => {
                 {errors.password.message}
               </Typography>
             )}
-            <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
-              label="Remember me"
-            />
-            <ForgotPassword open={open} handleClose={handleClose} />
+            <FormControl>
+              <FormLabel htmlFor="confirmPassword">Confirm Password</FormLabel>
+              <TextField
+                // name="confirmPassword"
+                placeholder="••••••"
+                type="confirmPassword"
+                id="confirmPassword"
+                autoComplete="current-confirmPassword"
+                required
+                fullWidth
+                variant="outlined"
+                size="small"
+                {...register("confirmPassword")}
+              />
+            </FormControl>
+            {errors.confirmPassword && (
+              <Typography color="error" variant="caption">
+                {errors.confirmPassword.message}
+              </Typography>
+            )}
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ height: "40px" }}
             >
-              Login
+              Register
             </Button>
-            <UILink
-              component="button"
-              type="button"
-              onClick={handleClickOpen}
-              variant="body2"
-              sx={{ alignSelf: "center" }}
-            >
-              Forgot your password?
-            </UILink>
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography sx={{ textAlign: "center" }}>
-              Don&apos;t have an account? <Link to="/register">Register</Link>
+              Already have an account? <Link to="/login">Login</Link>
             </Typography>
           </Box>
         </Card>
@@ -172,4 +164,5 @@ const SignIn = (props: { disableCustomTheme?: boolean }) => {
     </>
   );
 };
+
 export default SignIn;

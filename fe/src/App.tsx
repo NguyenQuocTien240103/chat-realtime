@@ -1,13 +1,11 @@
-import Button from '@mui/material/Button';
-import Login from './pages/auth/login';
+import { BrowserRouter } from "react-router";
+import AllRoutes from "./routes";
 function App() {
-
   return (
-    <>
-      {/* <Button variant="contained">Hello world</Button> */}
-      <Login />
-    </>
-  )
+    <BrowserRouter>
+      <AllRoutes />
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
