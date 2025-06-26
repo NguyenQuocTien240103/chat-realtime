@@ -14,6 +14,9 @@ export const useAuth = () => {
       }, 3000);
       return;
     }
+    else{
+      setIsAuthenticated(true);
+    }
 
     // axios
     //   .get("/api/auth/verify", {

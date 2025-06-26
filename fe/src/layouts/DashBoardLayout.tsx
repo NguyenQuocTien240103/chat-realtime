@@ -1,10 +1,12 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import { Outlet } from "react-router";
 import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import PersonIcon from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LanguageIcon from "@mui/icons-material/Language";
+import MessageIcon from '@mui/icons-material/Message';
 import { AppProvider } from "@toolpad/core/AppProvider";
 import {
   DashboardLayout,
@@ -45,6 +47,11 @@ const NAVIGATION: Navigation = [
         ],
       },
     ],
+  },
+  {
+    segment: "messages",
+    title: "Messages",
+    icon: <MessageIcon />,
   },
 ];
 
@@ -128,12 +135,16 @@ const demoSession = {
 
 const DashBoardLayout = () => {
   const [pathname, setPathname] = React.useState("/dashboard");
+  const navigate = useNavigate();
 
   const router = React.useMemo<Router>(() => {
     return {
       pathname,
       searchParams: new URLSearchParams(),
-      navigate: (path) => setPathname(String(path)),
+      navigate: (path) => {
+        setPathname(String(path)),
+        navigate(path);
+      }
     };
   }, [pathname]);
 
@@ -162,10 +173,10 @@ const DashBoardLayout = () => {
           toolbarAccount: () => null,
           sidebarFooter: SidebarFooterAccount,
         }}
-        sidebarExpandedWidth={"200px"}
+        sidebarExpandedWidth={"200px"} 
       >
         <Outlet />
-        {pathname}
+        {/* {pathname} */}
       </DashboardLayout>
     </AppProvider>
   );
