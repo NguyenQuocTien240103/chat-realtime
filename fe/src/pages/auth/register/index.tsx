@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterSchemaType, registerSchema } from "./schema";
+import { styled } from "@mui/material/styles";
+import { SitemarkIcon } from "./components/CustomIcons";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -11,8 +13,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
-import { styled } from "@mui/material/styles";
-import { SitemarkIcon } from "./components/CustomIcons";
+import fetchApi from "../../../utils/fetchApi";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -50,7 +51,7 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
   },
 }));
 
-const SignIn = (props: { disableCustomTheme?: boolean }) => {
+const Register = (props: { disableCustomTheme?: boolean }) => {
   const {
     register,
     handleSubmit,
@@ -58,7 +59,19 @@ const SignIn = (props: { disableCustomTheme?: boolean }) => {
   } = useForm<RegisterSchemaType>({
     resolver: zodResolver(registerSchema),
   });
-  const onSubmit = (data: RegisterSchemaType) => console.log(data);
+  const onSubmit = async (data: RegisterSchemaType) => {
+    console.log(data);
+    const res = await fetchApi(`${import.meta.env.VITE_API_BASE_URL}/auth/register`,{
+        method: "POST",
+        body: JSON.stringify({ 
+          email           : data.email, 
+          password        : data.password,
+          confirmPassword : data.confirmPassword
+        }),
+    })
+    const result = await res.json();
+    console.log(result);
+  }
 
   return (
     <>
@@ -130,7 +143,7 @@ const SignIn = (props: { disableCustomTheme?: boolean }) => {
               <TextField
                 // name="confirmPassword"
                 placeholder="••••••"
-                type="confirmPassword"
+                type="password"
                 id="confirmPassword"
                 autoComplete="current-confirmPassword"
                 required
@@ -165,4 +178,4 @@ const SignIn = (props: { disableCustomTheme?: boolean }) => {
   );
 };
 
-export default SignIn;
+export default Register;

@@ -52,3 +52,5 @@ export default tseslint.config({
   },
 })
 ```
+## Socket
+- Dùng socket trong useEffect có dependency nhớ clean socket event tránh duplicate, memory leak

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useEntity } from '../../../context/EntityContext';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -6,116 +6,85 @@ import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
+import fetchApi from '../../../utils/fetchApi';
 
-type Item = {
-  id: number;
-  avatar: string;
-  primary: string;
-  secondary: string;
-  name: string;
-}
-
-const items: Item[] = [
-  {
-    id: 1,
-    avatar: '/static/images/avatar/1.jpg',
-    primary: 'Brunch this weekend?',
-    secondary: "I'll be in your neighborhood doing errands this…",
-    name: 'Ali Connors',
-  },
-  {
-    id: 2,
-    avatar: '/static/images/avatar/2.jpg',
-    primary: 'Summer BBQ',
-    secondary: "Wish I could come, but I'm out of town this…",
-    name: 'to Scott, Alex, Jennifer',
-  },
-  {
-    id: 3,
-    avatar: '/static/images/avatar/3.jpg',
-    primary: 'Oui Oui',
-    secondary: 'Do you have Paris recommendations? Have you ever…',
-    name: 'Sandra Adams',
-  },
-  {
-    id: 4,
-    avatar: '/static/images/avatar/1.jpg',
-    primary: 'Brunch this weekend?',
-    secondary: "I'll be in your neighborhood doing errands this…",
-    name: 'Ali Connors',
-  },
-  {
-    id: 5,
-    avatar: '/static/images/avatar/2.jpg',
-    primary: 'Summer BBQ',
-    secondary: "Wish I could come, but I'm out of town this…",
-    name: 'to Scott, Alex, Jennifer',
-  },
-  {
-    id: 6,
-    avatar: '/static/images/avatar/3.jpg',
-    primary: 'Oui Oui',
-    secondary: 'Do you have Paris recommendations? Have you ever…',
-    name: 'Sandra Adams',
-  },
-  {
-    id: 7,
-    avatar: '/static/images/avatar/1.jpg',
-    primary: 'Brunch this weekend?',
-    secondary: "I'll be in your neighborhood doing errands this…",
-    name: 'Ali Connors',
-  },
-  {
-    id: 8,
-    avatar: '/static/images/avatar/2.jpg',
-    primary: 'Summer BBQ',
-    secondary: "Wish I could come, but I'm out of town this…",
-    name: 'to Scott, Alex, Jennifer',
-  },
-  {
-    id: 9,
-    avatar: '/static/images/avatar/3.jpg',
-    primary: 'Oui Oui',
-    secondary: 'Do you have Paris recommendations? Have you ever…',
-    name: 'Sandra Adams',
-  },
-  // có thể thêm nhiều item...
-];
+type Conversation = {
+  user: {
+    id            : number,
+    email         : string,
+    avatar        : string,
+  };
+  lastMessage?    : string,
+  lastMessageAt?  : string,
+  roomId?         : string,
+};
 
 const ListComponent: React.FC = () => {
-  const { selectedEntity, setSelectedEntity } = useEntity();
+  const { selectedEntityId, setSelectedEntityId } = useEntity();
+  const [listConversation,setListConversation] = useState<Conversation[]>([]);
+  const getListConversation = async () =>{
+    try {
+      const res = await fetchApi(`${import.meta.env.VITE_API_BASE_URL}/conversation/getList`,{
+        method: "GET",
+      })
+      const result = await res.json();
+      setListConversation(result.data);
+    } catch (error: any) {
+      console.log("error:", error);
+    }
+  }
+  useEffect(()=>{
+    getListConversation();  
+  },[])
+
+  const handleOnclick = (e: any, item: Conversation) => {
+    setSelectedEntityId(item.user.id)
+     
+  }
 
   return (
     <List sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}>
-      {items.map((item) => (
+      {listConversation.map((item) => (
         <ListItem
-          key={`${item.id}-${item.name}`} // kết hợp để tránh key trùng
+          key={`${item.user.id}`} // kết hợp để tránh key trùng
           alignItems="flex-start"
-          sx={{ cursor: 'pointer' }}
-          onClick={() => setSelectedEntity(item.id)}
+          // sx={{ cursor: 'pointer' }}
+          sx={{
+            cursor: 'pointer',
+            bgcolor: selectedEntityId === item.user.id ? 'grey.100' : 'transparent', // Active background
+          }}
+          onClick={(e) => handleOnclick(e,item)}
         >
           <ListItemAvatar>
-            <Avatar alt={item.name} src={item.avatar} />
+            <Avatar alt={item.user.avatar} src={item.user.avatar} />
           </ListItemAvatar>
           <ListItemText
-            primary={item.primary}
+            primary={item.user.email}
             secondary={
               <React.Fragment>
                 <Typography
                   component="span"
                   variant="body2"
-                  sx={{ color: 'text.primary', display: 'inline' }}
+                  noWrap
+                  sx={{
+                    color: 'text.primary',
+                    display: 'inline-block', // hoặc block nếu cần chiếm toàn bộ chiều rộng
+                    maxWidth: '200px',       // bạn nên đặt giới hạn cụ thể theo layout
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    verticalAlign: 'middle',
+                  }}
                 >
-                  {item.name}
+                  { item.lastMessage ? "abc" : "nguyễn quốc tiến" }
                 </Typography>
-                {` — ${item.secondary}`}
               </React.Fragment>
             }
           />
         </ListItem>
       ))}
+      
     </List>
   );
-};
+};  
 
 export default ListComponent;

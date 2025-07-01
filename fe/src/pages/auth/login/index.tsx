@@ -1,8 +1,11 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchemaType, loginSchema } from "./schema";
+import { styled } from "@mui/material/styles";
+import { SitemarkIcon } from "./components/CustomIcons";
+import { Link as UILink } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -15,9 +18,7 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
 import ForgotPassword from "./components/ForgotPassword";
-import { styled } from "@mui/material/styles";
-import { SitemarkIcon } from "./components/CustomIcons";
-import { Link as UILink } from "@mui/material";
+import fetchApi from "../../../utils/fetchApi";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -55,9 +56,9 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
   },
 }));
 
-const SignIn = (props: { disableCustomTheme?: boolean }) => {
+const Login = (props: { disableCustomTheme?: boolean }) => {
+  let navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
-
   const handleClickOpen = () => {
     setOpen(true);
   };
@@ -72,7 +73,27 @@ const SignIn = (props: { disableCustomTheme?: boolean }) => {
   } = useForm<LoginSchemaType>({
     resolver: zodResolver(loginSchema),
   });
-  const onSubmit = (data: LoginSchemaType) => console.log(data);
+  const onSubmit = async (data: LoginSchemaType) => {
+    try {
+      const res = await fetchApi(
+        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password,
+          }),
+        }
+      );
+      const result = await res.json();
+      if (result.data) {
+        localStorage.setItem("token", result.data.token);
+      }
+      navigate("/");
+    } catch (error: any) {
+      console.log("error:", error);
+    }
+  };
 
   return (
     <>
@@ -172,4 +193,4 @@ const SignIn = (props: { disableCustomTheme?: boolean }) => {
     </>
   );
 };
-export default SignIn;
+export default Login;

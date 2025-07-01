@@ -8,6 +8,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import LanguageIcon from "@mui/icons-material/Language";
 import MessageIcon from '@mui/icons-material/Message';
 import { AppProvider } from "@toolpad/core/AppProvider";
+import { useTranslation } from "react-i18next";
 import {
   DashboardLayout,
   SidebarFooterProps,
@@ -37,12 +38,12 @@ const NAVIGATION: Navigation = [
         icon: <LanguageIcon />,
         children: [
           {
-            segment: "vn",
-            title: "VN",
+            segment: "vi",
+            title: "VI",
           },
           {
-            segment: "english",
-            title: "English",
+            segment: "en",
+            title: "EN",
           },
         ],
       },
@@ -132,18 +133,40 @@ const demoSession = {
     image: "https://avatars.githubusercontent.com/u/19550456",
   },
 };
-
 const DashBoardLayout = () => {
+  const { t, i18n } = useTranslation();
   const [pathname, setPathname] = React.useState("/dashboard");
   const navigate = useNavigate();
+
+  const translateNavigation = (nav: Navigation): Navigation => {
+    return nav.map((item) => {
+      const newItem = {
+        ...item,
+        title: t((item as any).title),
+      };
+  
+      if ((item as any).children) {
+        (newItem as any).children = translateNavigation((item as any).children);
+      }
+      return newItem;
+    });
+  };
 
   const router = React.useMemo<Router>(() => {
     return {
       pathname,
       searchParams: new URLSearchParams(),
       navigate: (path) => {
-        setPathname(String(path)),
-        navigate(path);
+        setPathname(String(path));
+        if (String(path).includes("/vi")) {
+          i18n.changeLanguage("vi");
+          // alert("a");
+        } else if (String(path).includes("/en")) {
+          i18n.changeLanguage("en");
+        }
+        else{
+          navigate(path);
+        }
       }
     };
   }, [pathname]);
@@ -162,7 +185,8 @@ const DashBoardLayout = () => {
 
   return (
     <AppProvider
-      navigation={NAVIGATION}
+      // navigation={NAVIGATION}
+      navigation={translateNavigation(NAVIGATION)}
       router={router}
       theme={dashboardTheme}
       authentication={authentication}
@@ -176,7 +200,6 @@ const DashBoardLayout = () => {
         sidebarExpandedWidth={"200px"} 
       >
         <Outlet />
-        {/* {pathname} */}
       </DashboardLayout>
     </AppProvider>
   );
