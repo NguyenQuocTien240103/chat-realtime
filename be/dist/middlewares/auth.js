@@ -13,7 +13,6 @@ const authMiddleware = (req, res, next) => {
     const token = authHeader.split(' ')[1];
     try {
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || '');
-        // console.log(decoded);
         if (!decoded || typeof decoded !== 'object') {
             res.status(401).json({ error: 'Invalid token payload' });
             return;

@@ -13,9 +13,7 @@ const authService = {
         },
       });
 
-      if (!user) {
-        throw new Error("Invalid credentials");
-      }
+      if (!user) throw new Error("Invalid credentials");
       
       const { password, ...userData } = user; // remove field password
       const token = jwt.sign({ data: userData }, process.env.JWT_SECRET || "", {
@@ -25,7 +23,6 @@ const authService = {
         ...userData,
         token,
       };
-
       return result;
     } catch (error) {
       throw new Error("Login is fail");
@@ -39,11 +36,15 @@ const authService = {
       const { password, ...userData } = user; // remove field password
       return userData;
     } catch (error: any) {
+
       if (error instanceof PrismaClientKnownRequestError) {
+
         if (error.code === "P2002") {
           throw new Error("Email is exist");
         }
+
       }
+
       throw new Error("Register is fail");
     }
   },
@@ -60,10 +61,8 @@ const authService = {
         }
       });      
       
-      if(!user){
-        throw new Error("Get user is fail");
-      }
-
+      if(!user) throw new Error("Get user is fail");
+      
       return user;
     } catch (error: any) {
       throw new Error("Get user is fail");

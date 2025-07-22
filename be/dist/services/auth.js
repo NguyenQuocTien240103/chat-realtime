@@ -35,9 +35,8 @@ const authService = {
                     password: data.password,
                 },
             });
-            if (!user) {
+            if (!user)
                 throw new Error("Invalid credentials");
-            }
             const { password } = user, userData = __rest(user, ["password"]); // remove field password
             const token = jsonwebtoken_1.default.sign({ data: userData }, process.env.JWT_SECRET || "", {
                 expiresIn: "7h",
@@ -78,9 +77,8 @@ const authService = {
                     email: true,
                 }
             });
-            if (!user) {
+            if (!user)
                 throw new Error("Get user is fail");
-            }
             return user;
         }
         catch (error) {

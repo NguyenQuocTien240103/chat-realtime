@@ -1,141 +1,200 @@
-import * as React from 'react';
-import { useState, useRef, useEffect } from 'react';
-import { Box, Typography, Input, Paper, List, ListItem, ListItemText } from '@mui/material';
-import { useEntity } from '../../../context/EntityContext';
-import fetchApi from '../../../utils/fetchApi';
-import { useUser } from '../../../hooks/useUser';
-import { socket } from '../../../socket';
+import * as React from "react";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Socket } from "socket.io-client";
+import { Box, Typography, Input, Paper, List, ListItem, ListItemText } from "@mui/material";
+import { useEntity } from "../../../context/EntityContext";
+import { useUserContext } from "../../../context/UserContext";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import fetchApi from "../../../utils/fetchApi";
+import { useMediaQuery, useTheme } from "@mui/material";
 
 type User = {
-  id            : number;
-  email         : string;
-  avatar?       : string;
-}
+  id: number;
+  email: string;
+  avatar?: string;
+};
 
 type Message = {
-  id?           : number;
-  content?      : string;
-  createAt?     : string;
-  roomId        : number;
-  user          : User;
-}
-
-// type Room = {
-//   roomId        : number;
-//   type?         : string;
-//   name?         : string;
-// }
+  id?: number;
+  content?: string;
+  createAt?: string;
+  roomId: number;
+  user: User;
+};
 
 type UserRoom = {
-  id            : number;
-  userId        : number;
-  roomId        : number;
-}
+  id: number;
+  userId: number;
+  roomId: number;
+};
 
 type Room = {
-  id            : number;
-  type          : string;
-  name?         : string;
-  userRooms     : UserRoom[]; 
-  messages      : Message[];
-}
+  id: number;
+  type: string;
+  name?: string;
+  userRooms: UserRoom[];
+  messages: Message[];
+};
 
-const Conversation: React.FC = () => {
-  const { selectedEntityId } = useEntity();
-  const { user } = useUser();
-  // const [messages, setMessages] = useState<Message[] | null>(null);
-  const [room, setRoom] = useState<Room | null>(null);
-  const [inputValue, setInputValue] = useState('');
-  const listRef = useRef<HTMLUListElement | null>(null);
+type ConversationComponentProps = {
+  setIsBack?: React.Dispatch<React.SetStateAction<boolean>>;
+  socket: Socket;
+};
 
-  
-  useEffect(()=>{
-    if(selectedEntityId){
-        getConversationDetail(selectedEntityId);
-    }
-  },[selectedEntityId])
-  
+const Conversation: React.FC<ConversationComponentProps> = ({ setIsBack, socket }) => {
+  const navigate                        = useNavigate();
+  const theme                           = useTheme();
+  const isMdUp                          = useMediaQuery(theme.breakpoints.up("md"));
+  const { user }                        = useUserContext();
+  const { selectedEntityId }            = useEntity();
+  const [ room, setRoom ]               = useState<Room | null>(null);
+  const [ inputValue, setInputValue ]   = useState<string>("");
+  const listRef                         = useRef<HTMLUListElement | null>(null);
+  const currentRoomIdRef                = useRef<number | null>(null);
+  const isAlertShownRef                 = useRef<boolean>(false);
+  const cursorRef                       = useRef<number | null>(null);
+  let dummy                             = true;
   useEffect(() => {
+    const container = listRef.current;
+
+    if (!selectedEntityId || !container) return;
+
+    getConversationDetail(selectedEntityId);
+
+    if (!container) return;
+    // pagination with cursor-based
+    const handleScroll = async () => {
+      const scrollTop = container.scrollTop;
+
+      if (scrollTop < 50 && scrollTop > 0) {
+        if (!isAlertShownRef.current) {
+          isAlertShownRef.current = true;
+          
+          if(cursorRef.current === null) return;
+
+          try {
+            const res = await fetchApi(
+              `${import.meta.env.VITE_API_BASE_URL}/conversation/getDetail?cursor=${cursorRef.current}`,
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  entityId: selectedEntityId,
+                }),
+              }
+            );
+      
+            if (res.status == 401) {
+              localStorage.removeItem("token");
+              navigate("/login");
+              return;
+            }
+      
+            const result = await res.json();
+            console.log("result", result.data);
+
+            if (!result.data) return;
+
+            setRoom((pre) => {
+
+              if (!pre) return pre;
+      
+              return {
+                ...pre,
+                ...result.data,
+                messages: [
+                  ...pre.messages,
+                  ...(result.data.messages || []),
+                ],
+              };
+            });
+            // update cursor for cursor-based pagination
+            cursorRef.current = result.data.messages?.[result.data.messages.length - 1]?.id || null;
+        } catch (error) {
+          console.log("error", error);
+        }
+        }
+      } else {
+        // Reset when scrolling down
+        isAlertShownRef.current = false;
+      }
+    };
+      container.addEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [selectedEntityId])
+
+
+  useEffect(() => {
+
+    if (!room || !room.messages || room.messages.length === 0) return;
+
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
 
-    socket.on("receiveNewMessage",(newMessage : Message)=>{
-      // if (!room?.messages) {
-      //   // setMessages([newMessage]);
-      //   // setRoom()
-      //   setRoom((prev)=>{
-      //     if(!prev) return prev;
-      //     return{
-      //       ...prev,
-      //       messages: [...(prev.messages || []), newMessage],
-      //     }
-      //   })
-      // } else {
-      //   // setMessages((prev) => (prev ? [...prev, newMessage] : [newMessage]));
-      //   setRoom((prev) => {
-      //     if (!prev) return prev; // hoặc return null
-      //     return {
-      //       ...prev,
-      //       messages: [...(prev.messages || []), newMessage],
-      //     };
-      //   });        
-      // }
-      setRoom((prev)=>{
-        if(!prev) return prev;
-        return{
+    socket.on("receiveNewMessage", (newMessage: Message) => {
+      setRoom((prev) => {
+
+        if (!prev) return prev;
+
+        return {
           ...prev,
-          messages: [...(prev.messages || []), newMessage],
-        }
-      })
-    })
-
+          messages: [newMessage,...(prev.messages || [])],
+        };
+      });
+    });
     return () => {
-      socket.off("receiveNewMessage"); 
+      socket.off("receiveNewMessage");
     };
-
   }, [room?.messages]);
 
-  useEffect(()=>{
-      socket.connect();
-
-      return () =>{
-        socket.disconnect();
-      }
-  },[])
-
-  const getConversationDetail = async (selectedEntityId : number) =>{
+  const getConversationDetail = async (selectedEntityId: number) => {
     try {
-      const res = await fetchApi(`${import.meta.env.VITE_API_BASE_URL}/conversation/getDetail`,{
-        method: "POST",
-        body: JSON.stringify({
-          entityId: selectedEntityId,
-        })
-      })
-      const result = await res.json();
-     
-      // if ((!result.data || !Array.isArray(result.data)) && result) { // result.data not array (room have not message yet)
-      //   setMessages(null);
-      //   setRoom(result.data);
-      //   return;
-      // }      
-      setRoom(result.data);
+      const res = await fetchApi(
+        `${import.meta.env.VITE_API_BASE_URL}/conversation/getDetail`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            entityId: selectedEntityId,
+          }),
+        }
+      );
 
+      if (res.status == 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
+      const result = await res.json();
+
+      if (!result.data) return;
+
+      if (currentRoomIdRef.current) {
+        socket.emit("leaveRoom", currentRoomIdRef.current);
+      }
+
+      setRoom(result.data);
+      cursorRef.current = result.data.messages?.[result.data.messages.length - 1]?.id || null;
+      socket.emit("joinRoom", result.data.id);
+      currentRoomIdRef.current = result.data.id;
     } catch (error) {
-      console.log("error",error);
+      console.log("error", error);
     }
-  }
+  };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
 
-    if (event.key !== 'Enter' || inputValue.trim() === '') return;
-  
-    if(!user) return;                 // check user exists. verify token
-    
-    if(!room) return;                 // check room exists
+    if (event.key !== "Enter" || inputValue.trim() === "") return;
 
-    if(room && !room.id) return;  // check id room (id room is not null)
-    
+    if (!user) return; // check user exists. verify token
+
+    if (!room) return; // check room exists
+
+    if (room && !room.id) return; // check id room (id room is not null)
+
     const newMessage = {
       content: inputValue,
       createAt: new Date().toISOString(),
@@ -144,59 +203,87 @@ const Conversation: React.FC = () => {
         id: user.id,
         email: user.email,
         avatar: user.avatar,
-      }
+      },
     };
     socket.emit("sendMessage", newMessage); // send
-    setInputValue(''); 
+    setInputValue("");
   };
-    return (
+
+  return (
     <Paper
       elevation={3}
       sx={{
-        width: '100%',
-        margin: 'auto',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
+        width: "100%",
+        margin: "auto",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <Box
         sx={{
-          flex: '1 1 10%',
+          flex: "1 1 10%",
           marginBottom: 2,
-          borderBottom: '1px solid #ccc',
-          alignItems: 'center',
-          justifyContent: 'center',
-          display: 'flex',
+          borderBottom: "1px solid #ccc",
+          alignItems: "center",
+          justifyContent: "center",
+          display: "flex",
+          position: "relative",
         }}
       >
+        {!isMdUp && (
+          <Box
+            sx={{
+              position: "absolute",
+              left: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+            pl={2}
+            onClick={() => {
+              console.log("Back icon clicked");
+              setIsBack?.(true);
+            }}
+          >
+            <ArrowBackIcon />
+          </Box>
+        )}
+
         <Typography variant="h5" component="h2" align="center">
           Conversation
         </Typography>
       </Box>
-
       <List
         ref={listRef}
         sx={{
-          flex: '1 1 80%',
-          maxHeight: '100%',
-          overflowY: 'auto',
+          flex: "1 1 80%",
+          maxHeight: "100%",
+          overflowY: "auto",
           marginBottom: 2,
         }}
       >
-        {room && room.messages && room.messages.map((message, index) => (
-          <ListItem key={index}>
-            <ListItemText primary={message.content} secondary={ message.user.email} />
-          </ListItem>
-        ))}
+        {room &&
+          room.messages &&
+          room.messages.slice().reverse().map((message, index) => (
+            <ListItem key={index}>
+              <ListItemText
+                primary={message.content}
+                secondary={message.user.email}
+              />
+            </ListItem>
+          ))}
       </List>
 
-      <Box sx={{ flex: '1 1 10%', display: 'flex', borderTop: '1px solid #ccc' }}>
+      <Box
+        sx={{ flex: "1 1 10%", display: "flex", borderTop: "1px solid #ccc" }}
+      >
         <Input
           fullWidth
           placeholder="Type a message..."
           disableUnderline
-          sx={{ margin: '10px' }}
+          sx={{ margin: "10px" }}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}

@@ -1,27 +1,27 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
-import { Outlet } from "react-router";
+import { useEffect } from "react";
+import { useNavigate, Outlet } from "react-router-dom";
+import { AppProvider } from "@toolpad/core/AppProvider";
+import { useTranslation } from "react-i18next";
+import { DashboardLayout, SidebarFooterProps } from "@toolpad/core/DashboardLayout";
+import { Account, AccountPreview, AccountPreviewProps } from "@toolpad/core/Account";
+import { dashboardTheme } from "../theme";
+import { useUser } from "../hooks/useUser";
+import { useUserContext } from "../context/UserContext";
 import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import PersonIcon from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LanguageIcon from "@mui/icons-material/Language";
-import MessageIcon from '@mui/icons-material/Message';
-import { AppProvider } from "@toolpad/core/AppProvider";
-import { useTranslation } from "react-i18next";
-import {
-  DashboardLayout,
-  SidebarFooterProps,
-} from "@toolpad/core/DashboardLayout";
-import {
-  Account,
-  AccountPreview,
-  AccountPreviewProps,
-} from "@toolpad/core/Account";
-import type { Navigation, Router, Session } from "@toolpad/core/AppProvider";
-import { dashboardTheme } from "../theme";
+import MessageIcon from "@mui/icons-material/Message";
+import type { Navigation, Router } from "@toolpad/core/AppProvider";
 
 const NAVIGATION: Navigation = [
+  {
+    segment: "messages",
+    title: "Messages",
+    icon: <MessageIcon />,
+  },
   {
     segment: "settings",
     title: "Settings",
@@ -48,11 +48,6 @@ const NAVIGATION: Navigation = [
         ],
       },
     ],
-  },
-  {
-    segment: "messages",
-    title: "Messages",
-    icon: <MessageIcon />,
   },
 ];
 
@@ -126,16 +121,27 @@ const SidebarFooterAccount = ({ mini }: SidebarFooterProps) => {
   );
 };
 
-const demoSession = {
-  user: {
-    name: "Bharat Kashyap",
-    email: "bharatkashyap@outlook.com",
-    image: "https://avatars.githubusercontent.com/u/19550456",
-  },
-};
 const DashBoardLayout = () => {
   const { t, i18n } = useTranslation();
   const [pathname, setPathname] = React.useState("/dashboard");
+  const { user } = useUser();
+  const { setUser: setUserContext } = useUserContext();
+
+  useEffect(() => {
+    if (user) {
+      setUserContext(user);
+    }
+  }, [user]);
+
+  const sessionUser = user
+    ? {
+        id: String(user.id),
+        email: user.email,
+        image: user.avatar,
+        name: null,
+      }
+    : undefined;
+
   const navigate = useNavigate();
 
   const translateNavigation = (nav: Navigation): Navigation => {
@@ -144,10 +150,11 @@ const DashBoardLayout = () => {
         ...item,
         title: t((item as any).title),
       };
-  
+
       if ((item as any).children) {
         (newItem as any).children = translateNavigation((item as any).children);
       }
+
       return newItem;
     });
   };
@@ -158,46 +165,41 @@ const DashBoardLayout = () => {
       searchParams: new URLSearchParams(),
       navigate: (path) => {
         setPathname(String(path));
+
         if (String(path).includes("/vi")) {
           i18n.changeLanguage("vi");
-          // alert("a");
         } else if (String(path).includes("/en")) {
           i18n.changeLanguage("en");
-        }
-        else{
+        } else {
           navigate(path);
         }
-      }
+      },
     };
   }, [pathname]);
 
-  const [session, setSession] = React.useState<Session | null>(demoSession);
   const authentication = React.useMemo(() => {
     return {
-      signIn: () => {
-        setSession(demoSession);
-      },
+      signIn: () => {},
       signOut: () => {
-        setSession(null);
+        navigate("/login");
+        localStorage.removeItem("token");
       },
     };
   }, []);
 
   return (
     <AppProvider
-      // navigation={NAVIGATION}
       navigation={translateNavigation(NAVIGATION)}
       router={router}
       theme={dashboardTheme}
-      authentication={authentication}
-      session={session}
+      {...(user ? { authentication, session: { user: sessionUser } } : {})}
     >
       <DashboardLayout
         slots={{
           toolbarAccount: () => null,
           sidebarFooter: SidebarFooterAccount,
         }}
-        sidebarExpandedWidth={"200px"} 
+        sidebarExpandedWidth={"200px"}
       >
         <Outlet />
       </DashboardLayout>

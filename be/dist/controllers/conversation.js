@@ -31,6 +31,7 @@ const conversationController = {
     }),
     getDetail: (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         try {
+            const { cursor } = req.query;
             const jwtPayload = req.user;
             if (!jwtPayload || !jwtPayload.data) {
                 return res.status(401).json({ error: "Unauthorized: Missing or invalid token data" });
@@ -41,27 +42,8 @@ const conversationController = {
                 return res.status(400).json({ errors: result.error });
             }
             let entity = result.data;
-            const conversationDetail = yield conversation_1.default.getDetail(user, entity);
+            const conversationDetail = yield conversation_1.default.getDetail(user, entity, Number(cursor));
             return res.status(200).json({ message: "GetDetailConverstion is successfull", data: conversationDetail });
-        }
-        catch (error) {
-            return res.status(500).json({ error: error.message });
-        }
-    }),
-    getPrivateRoomDetail: (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-        try {
-            const jwtPayload = req.user;
-            if (!jwtPayload || !jwtPayload.data) {
-                return res.status(401).json({ error: "Unauthorized: Missing or invalid token data" });
-            }
-            const user = jwtPayload.data;
-            const result = entity_1.entitySchema.safeParse(req.body);
-            if (!result.success) {
-                return res.status(400).json({ errors: result.error });
-            }
-            let entity = result.data;
-            const conversationDetail = yield conversation_1.default.getPrivateRoomDetail(user, entity);
-            return res.status(200).json({ message: "GetPrivateRoomDetail is successfull", data: conversationDetail });
         }
         catch (error) {
             return res.status(500).json({ error: error.message });

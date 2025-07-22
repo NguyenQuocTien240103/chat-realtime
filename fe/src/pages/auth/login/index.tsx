@@ -86,9 +86,10 @@ const Login = (props: { disableCustomTheme?: boolean }) => {
         }
       );
       const result = await res.json();
-      if (result.data) {
-        localStorage.setItem("token", result.data.token);
-      }
+
+      if (!result.data) return;
+
+      localStorage.setItem("token", result.data.token);
       navigate("/");
     } catch (error: any) {
       console.log("error:", error);

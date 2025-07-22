@@ -1,7 +1,7 @@
 import prisma from "../models";
-import { Prisma } from "@prisma/client";
 import { EntitySchemaType } from "../validates/entity";
 import { JwtPayload } from 'jsonwebtoken';
+import { Message } from "../types";
 
 const conversationService = {
   getList: async (user: JwtPayload) => {
@@ -17,6 +17,7 @@ const conversationService = {
       if(allUsers.length === 0 || !allUsers){
         return [];
       }
+
       // get room message orderby createAt
       const userRooms = await prisma.userRoom.findMany({
         where: {
@@ -61,7 +62,6 @@ const conversationService = {
           lastMessageAt: lastMessage?.createAt || null,
         };
       });
-      
       const friendsWithMessages = mapped
         .filter(item => item !== null)
         .sort((a, b) => {
@@ -69,9 +69,7 @@ const conversationService = {
           if (!b.lastMessageAt) return -1;
           return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
         });
-
       const messagedUserIds = new Set(friendsWithMessages.map(f => f.user.id));
-
       const usersWithoutMessages = allUsers
         .filter(user => !messagedUserIds.has(user.id))
         .map(user => ({
@@ -80,15 +78,13 @@ const conversationService = {
           lastMessage: null,
           lastMessageAt: null,
         }));
-
       const finalList = [...friendsWithMessages, ...usersWithoutMessages];
-
       return finalList;
     } catch (error) {
       throw new Error("GetListConverstion is fail");
     }
   },
-  getDetail: async (user: JwtPayload, entity: EntitySchemaType ) => {
+  getDetail: async (user: JwtPayload, entity: EntitySchemaType, myCursor: number | undefined ) => {
     try {
       // check userExists
       const userExists = await prisma.user.findFirst({
@@ -156,104 +152,69 @@ const conversationService = {
         })
         return newRoom;
       }
-
-      return roomExists;
-      // if(roomExists){
-      //   const roomId = roomExists.id;
-      //   const messageRoom  = await prisma.message.findMany({
-      //     where:{
-      //       roomId: roomId,
-      //     },
-      //     include:{
-      //       user: {
-      //         select: {
-      //           id: true,
-      //           email: true,
-      //           avatar: true,
-      //         }
-      //       }
-      //     }
-      //   })
-      
-      //   if(messageRoom.length === 0){
-      //     return {
-      //       roomId: roomExists.id,
-      //       type: roomExists.type,
-      //       name: roomExists.name,
-      //     }
-      //   }
-
-      //   return messageRoom;
-      // }
-      
-      // const newRoom = await prisma.room.create({
-      //   data:{
-      //     type: "private",
-      //     userRooms: {
-      //       create: [
-      //         {userId: user.id},
-      //         {userId: entity.entityId},
-      //       ]
-      //     }
-      //   }
-      // })
-      // const result = {
-      //   roomId: newRoom.id,
-      //   type: newRoom.type,
-      //   name: newRoom.name,
-      // }
-      // return result;
-    } catch (error: any) {
-      throw new Error("Get detail is fail");
-    }
-  },
-  getPrivateRoomDetail: async (user: JwtPayload, entity: EntitySchemaType ) => {
-    try {
-      const userExists = await prisma.user.findFirst({
+      const messages = await prisma.message.findMany({
         where: {
-          id: entity.entityId,
-        }
-      })
-
-      if(!userExists || userExists.id === user.id){
-        throw new Error("Get privateRoomDetail is fail");
-      }
-
-      const room = await prisma.room.findFirst({
-        where: {
-          userRooms: {
-            some: {
-              userId: user.id,
-            },
-          },
-          AND: {
-            userRooms: {
-              some: {
-                userId: entity.entityId,
-              },
-            },
-          },
+          roomId: roomExists.id,
+        },
+        take: 12,
+        ...(myCursor ? { skip: 1, cursor: { id: myCursor } } : {}),
+        orderBy: {
+          createAt: 'desc',
         },
         include: {
-          userRooms: {
-            include: {
-              user: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              avatar: true,
             },
           },
         },
       });
-      
-
-      if(!room){
-        return null;
+      // return roomExists;
+      return {
+        ...roomExists,
+        messages, 
       }
 
-      return room;
-
     } catch (error: any) {
-      throw new Error("Get privateRoomDetail is fail");
+      throw new Error("Get detail is fail");
     }
   },
+  addMessage: async (message : Message) =>{
+    try {
+      await prisma.message.create({
+        data:{
+          userId: message.user.id,
+          roomId: message.roomId,
+          content: message.content,
+        }
+      })
+    } catch (error) {
+      throw new Error("Error message");
+    }
+  },
+  getUserRoom: async (roomId : number) =>{
+    try {
+      const userRooms = await prisma.userRoom.findMany({
+        where: {
+          roomId: roomId,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              avatar: true,
+            }
+          }
+        }
+      })
+      return userRooms;
+    } catch (error) {
+      throw new Error("Error userRooms");
+    }
+  }
 };
 
 export default conversationService;

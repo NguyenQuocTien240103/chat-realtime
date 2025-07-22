@@ -20,6 +20,7 @@ const PrivateRoute = () => {
       </Box>
     );
   }
+  
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 };
 

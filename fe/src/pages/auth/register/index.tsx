@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterSchemaType, registerSchema } from "./schema";
@@ -52,6 +52,7 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 const Register = (props: { disableCustomTheme?: boolean }) => {
+  let navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -60,17 +61,23 @@ const Register = (props: { disableCustomTheme?: boolean }) => {
     resolver: zodResolver(registerSchema),
   });
   const onSubmit = async (data: RegisterSchemaType) => {
-    console.log(data);
-    const res = await fetchApi(`${import.meta.env.VITE_API_BASE_URL}/auth/register`,{
-        method: "POST",
-        body: JSON.stringify({ 
-          email           : data.email, 
-          password        : data.password,
-          confirmPassword : data.confirmPassword
-        }),
-    })
-    const result = await res.json();
-    console.log(result);
+    try {
+      const res = await fetchApi(`${import.meta.env.VITE_API_BASE_URL}/auth/register`,{
+          method: "POST",
+          body: JSON.stringify({ 
+            email           : data.email, 
+            password        : data.password,
+            confirmPassword : data.confirmPassword
+          }),
+      })
+      const result = await res.json();
+
+      if(!result.data) return;
+      
+      navigate("/login");
+    } catch (error: any) {
+      console.log("error:", error);
+    }
   }
 
   return (

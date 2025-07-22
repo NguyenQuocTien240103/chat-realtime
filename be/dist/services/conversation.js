@@ -92,7 +92,7 @@ const conversationService = {
             throw new Error("GetListConverstion is fail");
         }
     }),
-    getDetail: (user, entity) => __awaiter(void 0, void 0, void 0, function* () {
+    getDetail: (user, entity, myCursor) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             // check userExists
             const userExists = yield models_1.default.user.findFirst({
@@ -156,95 +156,61 @@ const conversationService = {
                 });
                 return newRoom;
             }
-            return roomExists;
-            // if(roomExists){
-            //   const roomId = roomExists.id;
-            //   const messageRoom  = await prisma.message.findMany({
-            //     where:{
-            //       roomId: roomId,
-            //     },
-            //     include:{
-            //       user: {
-            //         select: {
-            //           id: true,
-            //           email: true,
-            //           avatar: true,
-            //         }
-            //       }
-            //     }
-            //   })
-            //   if(messageRoom.length === 0){
-            //     return {
-            //       roomId: roomExists.id,
-            //       type: roomExists.type,
-            //       name: roomExists.name,
-            //     }
-            //   }
-            //   return messageRoom;
-            // }
-            // const newRoom = await prisma.room.create({
-            //   data:{
-            //     type: "private",
-            //     userRooms: {
-            //       create: [
-            //         {userId: user.id},
-            //         {userId: entity.entityId},
-            //       ]
-            //     }
-            //   }
-            // })
-            // const result = {
-            //   roomId: newRoom.id,
-            //   type: newRoom.type,
-            //   name: newRoom.name,
-            // }
-            // return result;
+            const messages = yield models_1.default.message.findMany(Object.assign(Object.assign({ where: {
+                    roomId: roomExists.id,
+                }, take: 12 }, (myCursor ? { skip: 1, cursor: { id: myCursor } } : {})), { orderBy: {
+                    createAt: 'desc',
+                }, include: {
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            avatar: true,
+                        },
+                    },
+                } }));
+            // return roomExists;
+            return Object.assign(Object.assign({}, roomExists), { messages });
         }
         catch (error) {
             throw new Error("Get detail is fail");
         }
     }),
-    getPrivateRoomDetail: (user, entity) => __awaiter(void 0, void 0, void 0, function* () {
+    addMessage: (message) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const userExists = yield models_1.default.user.findFirst({
-                where: {
-                    id: entity.entityId,
+            yield models_1.default.message.create({
+                data: {
+                    userId: message.user.id,
+                    roomId: message.roomId,
+                    content: message.content,
                 }
             });
-            if (!userExists || userExists.id === user.id) {
-                throw new Error("Get privateRoomDetail is fail");
-            }
-            const room = yield models_1.default.room.findFirst({
-                where: {
-                    userRooms: {
-                        some: {
-                            userId: user.id,
-                        },
-                    },
-                    AND: {
-                        userRooms: {
-                            some: {
-                                userId: entity.entityId,
-                            },
-                        },
-                    },
-                },
-                include: {
-                    userRooms: {
-                        include: {
-                            user: true,
-                        },
-                    },
-                },
-            });
-            if (!room) {
-                return null;
-            }
-            return room;
         }
         catch (error) {
-            throw new Error("Get privateRoomDetail is fail");
+            throw new Error("Error message");
         }
     }),
+    getUserRoom: (roomId) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            const userRooms = yield models_1.default.userRoom.findMany({
+                where: {
+                    roomId: roomId,
+                },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            avatar: true,
+                        }
+                    }
+                }
+            });
+            return userRooms;
+        }
+        catch (error) {
+            throw new Error("Error userRooms");
+        }
+    })
 };
 exports.default = conversationService;
