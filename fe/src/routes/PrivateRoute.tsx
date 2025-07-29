@@ -5,7 +5,6 @@ import Box from "@mui/material/Box";
 
 const PrivateRoute = () => {
   const isAuthenticated = useAuth();
-
   if (isAuthenticated === null) {
     return (
       <Box

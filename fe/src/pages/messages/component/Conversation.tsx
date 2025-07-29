@@ -8,6 +8,7 @@ import { useUserContext } from "../../../context/UserContext";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import fetchApi from "../../../utils/fetchApi";
 import { useMediaQuery, useTheme } from "@mui/material";
+import { useTranslation } from 'react-i18next';
 
 type User = {
   id: number;
@@ -43,6 +44,7 @@ type ConversationComponentProps = {
 };
 
 const Conversation: React.FC<ConversationComponentProps> = ({ setIsBack, socket }) => {
+  const { t } = useTranslation();
   const navigate                        = useNavigate();
   const theme                           = useTheme();
   const isMdUp                          = useMediaQuery(theme.breakpoints.up("md"));
@@ -54,7 +56,8 @@ const Conversation: React.FC<ConversationComponentProps> = ({ setIsBack, socket 
   const currentRoomIdRef                = useRef<number | null>(null);
   const isAlertShownRef                 = useRef<boolean>(false);
   const cursorRef                       = useRef<number | null>(null);
-  let dummy                             = true;
+  
+
   useEffect(() => {
     const container = listRef.current;
 
@@ -163,6 +166,7 @@ const Conversation: React.FC<ConversationComponentProps> = ({ setIsBack, socket 
       );
 
       if (res.status == 401) {
+        alert('Your session has expired. Please log in again.');
         localStorage.removeItem("token");
         navigate("/login");
         return;
@@ -252,9 +256,10 @@ const Conversation: React.FC<ConversationComponentProps> = ({ setIsBack, socket 
         )}
 
         <Typography variant="h5" component="h2" align="center">
-          Conversation
+          {t('conversation.title')}
         </Typography>
       </Box>
+      
       <List
         ref={listRef}
         sx={{
@@ -264,8 +269,7 @@ const Conversation: React.FC<ConversationComponentProps> = ({ setIsBack, socket 
           marginBottom: 2,
         }}
       >
-        {room &&
-          room.messages &&
+        {room && room.messages && room.messages.length > 0 ? (
           room.messages.slice().reverse().map((message, index) => (
             <ListItem key={index}>
               <ListItemText
@@ -273,23 +277,40 @@ const Conversation: React.FC<ConversationComponentProps> = ({ setIsBack, socket 
                 secondary={message.user.email}
               />
             </ListItem>
-          ))}
+          ))
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+            }}
+          >
+            <Typography variant="h2" color="text.secondary">
+              {t('conversation.startNew')}
+            </Typography>
+          </Box>
+        )}
       </List>
 
-      <Box
-        sx={{ flex: "1 1 10%", display: "flex", borderTop: "1px solid #ccc" }}
-      >
-        <Input
-          fullWidth
-          placeholder="Type a message..."
-          disableUnderline
-          sx={{ margin: "10px" }}
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
-        />
-      </Box>
+     {room && 
+       <Box
+       sx={{ flex: "1 1 10%", display: "flex", borderTop: "1px solid #ccc" }}
+     >
+       <Input
+         fullWidth
+         placeholder="Type a message..."
+         disableUnderline
+         sx={{ margin: "10px" }}
+         value={inputValue}
+         onChange={(e) => setInputValue(e.target.value)}
+         onKeyPress={handleKeyPress}
+       />
+     </Box>
+     }
     </Paper>
+
   );
 };
 

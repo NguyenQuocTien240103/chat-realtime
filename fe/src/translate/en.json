@@ -3,6 +3,18 @@
     "Messages"  :   "Messages",
     "Sign Out"  :   "Sign Out",
     "Personal"  :   "Personal",
-    "Language"  :   "Language"
+    "Language"  :   "Language",
+    "home": {
+        "title": "Welcome to Chat Real-Time",
+        "description": "Chat quickly, securely, and easily with your friends.",
+        "featuresTitle": "Key Features",
+        "feature1": "Send and receive messages in real-time",
+        "feature2": "Secure with JWT authentication",
+        "feature3": "Optimized for both desktop and mobile"
+      },
+    "conversation": {
+        "title": "Conversation",
+        "startNew": "Start a new conversation"
+    }
 }
    

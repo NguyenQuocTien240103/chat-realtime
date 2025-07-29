@@ -1,12 +1,10 @@
 import * as React from "react";
-import { useEffect } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { AppProvider } from "@toolpad/core/AppProvider";
 import { useTranslation } from "react-i18next";
 import { DashboardLayout, SidebarFooterProps } from "@toolpad/core/DashboardLayout";
 import { Account, AccountPreview, AccountPreviewProps } from "@toolpad/core/Account";
 import { dashboardTheme } from "../theme";
-import { useUser } from "../hooks/useUser";
 import { useUserContext } from "../context/UserContext";
 import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
@@ -124,14 +122,7 @@ const SidebarFooterAccount = ({ mini }: SidebarFooterProps) => {
 const DashBoardLayout = () => {
   const { t, i18n } = useTranslation();
   const [pathname, setPathname] = React.useState("/dashboard");
-  const { user } = useUser();
-  const { setUser: setUserContext } = useUserContext();
-
-  useEffect(() => {
-    if (user) {
-      setUserContext(user);
-    }
-  }, [user]);
+  const { user } = useUserContext();
 
   const sessionUser = user
     ? {

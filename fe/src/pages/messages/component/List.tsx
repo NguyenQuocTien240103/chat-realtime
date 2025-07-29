@@ -43,6 +43,7 @@ const ListComponent: React.FC<ListComponentProps> = ({ setIsBack, socket }) => {
       );
 
       if (res.status == 401) {
+        alert('Your session has expired. Please log in again.');
         localStorage.removeItem("token");
         navigate("/login");
         return;

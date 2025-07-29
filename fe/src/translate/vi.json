@@ -3,6 +3,18 @@
     "Messages"  :   "Tin nhắn",
     "Sign Out"  :   "Đăng xuất",
     "Personal"  :   "Thông tin",
-    "Language"  :   "Ngôn ngữ"
+    "Language"  :   "Ngôn ngữ",
+    "home": {
+        "title": "Chào mừng đến với Chat Real-Time",
+        "description": "Trò chuyện nhanh chóng, bảo mật và tiện lợi với bạn bè của bạn.",
+        "featuresTitle": "Tính năng nổi bật",
+        "feature1": "Gửi và nhận tin nhắn theo thời gian thực",
+        "feature2": "Bảo mật với xác thực JWT",
+        "feature3": "Tối ưu hóa cho cả desktop và mobile"
+      },
+    "conversation": {
+        "title": "Cuộc trò chuyện",
+        "startNew": "Bắt đầu cuộc trò chuyện mới"
+    }
 }
    
