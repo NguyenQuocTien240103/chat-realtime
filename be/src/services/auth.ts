@@ -25,6 +25,7 @@ const authService = {
       };
       return result;
     } catch (error) {
+      console.error("Error:", error.message);
       throw new Error("Login is fail");
     }
   },
@@ -36,13 +37,12 @@ const authService = {
       const { password, ...userData } = user; // remove field password
       return userData;
     } catch (error: any) {
+      console.error("Error:", error.message);
 
       if (error instanceof PrismaClientKnownRequestError) {
 
-        if (error.code === "P2002") {
-          throw new Error("Email is exist");
-        }
-
+        if (error.code === "P2002") throw new Error("Email is exist");
+    
       }
 
       throw new Error("Register is fail");
@@ -61,10 +61,11 @@ const authService = {
         }
       });      
       
-      if(!user) throw new Error("Get user is fail");
+      if(!user) throw new Error("User not found");
       
       return user;
     } catch (error: any) {
+      console.error("Error:", error.message);
       throw new Error("Get user is fail");
     }
   },

@@ -80,7 +80,8 @@ const conversationService = {
         }));
       const finalList = [...friendsWithMessages, ...usersWithoutMessages];
       return finalList;
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error:", error.message);
       throw new Error("GetListConverstion is fail");
     }
   },
@@ -93,10 +94,8 @@ const conversationService = {
         }
       })
 
-      if(!userExists || userExists.id === user.id){
-        throw new Error("Get detail is fail");
-      }
-
+      if(!userExists || userExists.id === user.id) throw new Error("User not found");
+      
       // check roomExists
       const roomExists = await prisma.room.findFirst({
         where: {
@@ -152,6 +151,7 @@ const conversationService = {
         })
         return newRoom;
       }
+
       const messages = await prisma.message.findMany({
         where: {
           roomId: roomExists.id,
@@ -171,13 +171,12 @@ const conversationService = {
           },
         },
       });
-      // return roomExists;
       return {
         ...roomExists,
         messages, 
       }
-
     } catch (error: any) {
+      console.error("Error:", error.message);
       throw new Error("Get detail is fail");
     }
   },
@@ -190,7 +189,8 @@ const conversationService = {
           content: message.content,
         }
       })
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error:", error.message);
       throw new Error("Error message");
     }
   },
@@ -211,7 +211,8 @@ const conversationService = {
         }
       })
       return userRooms;
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error:", error.message);
       throw new Error("Error userRooms");
     }
   }
